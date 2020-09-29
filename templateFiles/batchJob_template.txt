@@ -1,0 +1,28 @@
+#!/bin/bash -login
+#PBS -l nodes=?NODES?:ppn=?PPN?
+#PBS -l walltime=?HOURS?:?MINUTES?:00
+#PBS -l mem=?MEMORY?gb
+#PBS -N ?NAME?
+#PBS -M ?MAILADDRESS?
+#PBS -m ?MAILTYPE?
+#PBS -q ?QUEUE?
+
+# show which computer the job ran on
+echo "Job ran on:" $(hostname)
+
+# load the relevant modules
+module load GCCcore/.8.3.0 FFmpeg/.4.2.1
+module load ?MATVERSION?
+
+# change to work dir:
+cd ?WORKDIR?
+
+# work out the number of threads
+export NUM_THREADS=$(wc -l $PBS_NODEFILE | cut -d" " -f1)
+
+# log file name
+LOGFILE=$(echo $PBS_JOBID | cut -d"." -f1).log
+
+# the program to run
+matlab -nodesktop < ?MATFILE? > $LOGFILE 2>&1
+
