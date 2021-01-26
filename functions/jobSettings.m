@@ -5,12 +5,12 @@
 
 function personalSettings = jobSettings(personalSettings, batchSettings)
 %% personal settings (advanced, do not change if not familiar with the cluster settings)
-personalSettings.extPath = ['/home/', personalSettings.username];           % external path to your default directory. Use /home/username or /bigwork/username.
-personalSettings.extUploadFolder = [personalSettings.extPath, '/myUploads'];% external (server) dir, where local files are uploaded to
+personalSettings.extPath = ['/bigwork/', personalSettings.username];           % external path to your default directory. Use /home/username or /bigwork/username.
+personalSettings.extUploadFolder = [personalSettings.extPath, '/JOBS'];% external (server) dir, where local files are uploaded to
 personalSettings.locPath = pwd();                                           % path to local top level working dir
 personalSettings.deleteDataAfterDownload = 1;                               % bool whether upload and result data from a certain job should be deleted from server after downloading its results
 personalSettings.extDownloadFolder = [personalSettings.extPath, ...
-    '/myUploads/$UPLOADDIR$/', personalSettings.relResultsFolder];          % external (server) dir, from which to download results, %UPLOADDIR% will be adjusted later by the program.
+    '/JOBS/$UPLOADDIR$/', personalSettings.relResultsFolder];          % external (server) dir, from which to download results, %UPLOADDIR% will be adjusted later by the program.
 
 %% Override, if standard variables were not changed (DO NOT CHANGE!)
 if(strcmp(batchSettings.mailName, 'yourMailadress@yourDomaine.com'))
