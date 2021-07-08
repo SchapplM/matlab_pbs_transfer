@@ -6,7 +6,7 @@
 % Philipp Kortmann, 2018/04/17
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
-function [boolDone, ps, bs] = checkIfJobIsDone(ps, bs)
+function [boolDone, ps, bs] = checkIfJobIsDone(ps, bs_in)
 
 %% ssh2 config
 ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);     % configurate ssh2 connection
@@ -17,7 +17,11 @@ ps.jobID = str2num(input('What is your job-ID?\n', 's'));
 
 %% check if job is done
 load([ps.locPath, '/jobIDs/jobID', num2str(ps.jobID), '.mat'], 'jobID', ...
-  'dateString', 'jobName'); % load locally saved jobID and dateString
+  'dateString', 'jobName', 'bs'); % load locally saved jobID and dateString
+% Get Job settings (stored when submitting the job).
+if ~exist('bs', 'var')
+  bs = bs_in;
+end
 % Get job name. Necessary for generating the file name of status files
 if ~exist('jobName', 'var')
   % use job name from the batch settings. Can be outdated, if other

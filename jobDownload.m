@@ -9,7 +9,7 @@ this_path = fileparts( mfilename('fullpath') );
 cd(this_path); % Change directory to make the script work
 clc();
 clearvars();
-close all;                              
+close all;
 addpath('functions'); % add subfunctions
 addpath(fullfile('functions','matlab-ssh2-master','ssh2'));
 %% general settings

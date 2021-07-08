@@ -13,8 +13,9 @@ ssh2_conn = ssh2_command(ssh2_conn, 'ls -la *ninjas*');
 
 %% put log files in download dir
 ps.extUploadFolderConcrete = [ps.extUploadFolder, '/upload', ps.dateString];
+ssh2_command(ssh2_conn, ['mkdir -p ', ps.extDownloadFolder]);
 % Prepare downloading the batch script for reproduction of the process
-% TODO: Also download the m-file of the job
+ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', bs.matFileName, ' ', ps.extDownloadFolder]);
 ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/batchJob.sh ' ps.extDownloadFolder]);
 
 % Download log and error output of the job

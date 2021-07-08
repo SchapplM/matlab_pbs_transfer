@@ -52,7 +52,7 @@ disp(['Your jobID: ', num2str(jobID)]);
 if ~exist('jobIDs', 'file'), mkdir('jobIDs'); end
 jobName = bs.name;
 save([ps.locPath, '/jobIDs/jobID', num2str(jobID), '.mat'], ...
-  'jobID', 'dateString', 'jobName');
+  'jobID', 'dateString', 'jobName', 'bs');
 
 %% Exit
 cd(olddir);
