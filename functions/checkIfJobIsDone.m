@@ -16,8 +16,40 @@ ssh2_conn = ssh2_command(ssh2_conn, 'ls -la *ninjas*');
 ps.jobID = str2num(input('What is your job-ID?\n', 's'));
 
 %% check if job is done
-load([ps.locPath, '/jobIDs/jobID', num2str(ps.jobID), '.mat'], 'jobID', ...
-  'dateString', 'jobName', 'bs'); % load locally saved jobID and dateString
+jobfilename = fullfile(ps.locPath,'jobIDs',['jobID',num2str(ps.jobID),'.mat']);
+if ~exist(jobfilename, 'file')
+  warning('File with job data from uploading the job not found. Proceed anyway.');
+  % This occurs if the job is started from a different machine than the one
+  % downloading the job.
+  % Try finding the job information on the computing cluster.
+  % Search for log and output files in the expected directories and extract
+  % the required information to proceed checking the status of the job.
+  [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ...
+    ['find ', ps.extUploadFolder, ' -name "', num2str(ps.jobID), '.log"']);
+  if isempty(cmd)
+    error('Log file not found on server');
+  end
+  tokens = regexp(cmd{1}, [ps.extUploadFolder, '/upload([\d_]+)/'], 'tokens');
+  if isempty(tokens)
+    error('No match of dateString in file path on server');
+  end
+  dateString = tokens{1}{1};
+  jobID = ps.jobID;
+  % Get job name from eventual output file in main directory
+  [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ...
+    ['find ~', ' -maxdepth 1 -name "*.o', num2str(ps.jobID), '"']);
+  if isempty(cmd)
+    error('No output file found on server');
+  end
+  tokens = regexp(cmd{1}, ['/([a-zA-Z0-9_]+).o', num2str(ps.jobID), '$'], 'tokens');
+  if isempty(tokens)
+    error('No match of jobName in file path on server');
+  end
+  jobName = tokens{1}{1};
+else
+  load(jobfilename, 'jobID', ...
+    'dateString', 'jobName', 'bs'); % load locally saved jobID and dateString
+end
 % Get Job settings (stored when submitting the job).
 if ~exist('bs', 'var')
   bs = bs_in;
@@ -47,5 +79,3 @@ end
 
 %% close ssh2
 ssh2_conn = ssh2_close(ssh2_conn);                                  % close connection
-
-
