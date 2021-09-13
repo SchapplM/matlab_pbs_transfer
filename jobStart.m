@@ -4,12 +4,24 @@
 % settings
 %   structure with the fields of userSettings.m and jobSettings.m that will
 %   be overwritten regarding the content of the files. This can be used
-%   when calling this function from another Matlab script
+%   when calling this function from another Matlab script.
+% startsettings
+%   Additionally, the fields of the input structure from startJob.m can be
+%   set as well to define dependencies for starting the job.
+%   The order of fields is given to the job query command and determines
+%   the logic of multiple dependencies. See `man qsub` on the cluster.
+%   fields: afterok, afternotok, ...
+%   values: array with job IDs
+% 
+% Output:
+% jobID
+%   unique identifier of the queried Job in the computing cluster
 
 % Philipp Kortmann, 2018/04/17
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
-function jobStart(settings)
+function jobID = jobStart(settings, startsettings)
+
 %% Init
 % add path to subfunctions
 olddir = pwd();
@@ -28,7 +40,7 @@ ps = jobAuthentication(ps);  % load personal authentication data
 ps = jobSettings(ps, bs); % load personal settings
 setUpBasics(); % unzip external functions, etc.
 % Overwrite settings from the batch file with the ones given to the fcn
-if nargin == 1
+if nargin >= 1
   for f = fields(settings)'
     if isfield(bs, f{1})
       bs.(f{1}) = settings.(f{1});
@@ -47,7 +59,10 @@ uploadUserData(ps);
 dateString = ps.dateString;
 
 %% start job
-jobID = startJob(ps);                         % returns jobID
+if nargin < 2
+  startsettings = []; % Placeholder
+end
+jobID = startJob(ps, startsettings);
 disp(['Your jobID: ', num2str(jobID)]);
 if ~exist('jobIDs', 'file'), mkdir('jobIDs'); end
 jobName = bs.name;
