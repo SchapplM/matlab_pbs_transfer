@@ -23,6 +23,9 @@ export NUM_THREADS=$(wc -l $PBS_NODEFILE | cut -d" " -f1)
 # log file name
 LOGFILE=$(echo $PBS_JOBID | cut -d"." -f1).log
 
+# change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
+export HOME=$TMPDIR
+
 # the program to run
 matlab -nodesktop < ?MATFILE? > $LOGFILE 2>&1
 
