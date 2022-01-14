@@ -9,11 +9,10 @@
 function [boolDone, ps, bs] = checkIfJobIsDone(ps, bs_in)
 
 %% ssh2 config
-ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);     % configurate ssh2 connection
-ssh2_conn = ssh2_command(ssh2_conn, 'ls -la *ninjas*');
+ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 
 %% ask for jobID
-ps.jobID = str2num(input('What is your job-ID?\n', 's'));
+ps.jobID = str2double(input('What is your job-ID?\n', 's'));
 
 %% check if job is done
 jobfilename = fullfile(ps.locPath,'jobIDs',['jobID',num2str(ps.jobID),'.mat']);
@@ -68,14 +67,20 @@ ps.dateString = dateString;
 ps.extDownloadFolder = strrep(ps.extDownloadFolder, ...
     '$UPLOADDIR$', ['upload', ps.dateString]);
 boolDone = 0;
-if(jobID ~= 0)                                                      % if jobID looks real...
-    filename = [jobName, '.o', num2str(jobID)];
-    [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ['file ', filename]);% try to open file
-
-    if(strcmp(cmd{1,1}(end-9:end), 'ASCII text'))                   % check whether the content of the jobfile is correct
-        boolDone = 1;
+if(jobID ~= 0) % if jobID looks real...
+  for i_queue = 1:2 % Look for SLURM and PBS output format
+    if i_queue == 1 % SLURM
+      filename = ['slurm-', num2str(jobID), '.out'];
+    else % PBS
+      filename = [jobName, '.o', num2str(jobID)];
     end
+    [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ['file ', filename]); % try to open file
+    if(strcmp(cmd{1,1}(end-9:end), 'ASCII text'))
+      boolDone = 1;  % content of the jobfile is correct
+      break;
+    end
+  end
 end
 
 %% close ssh2
-ssh2_conn = ssh2_close(ssh2_conn);                                  % close connection
+ssh2_close(ssh2_conn);

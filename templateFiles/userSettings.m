@@ -16,6 +16,10 @@ personalSettings.locUploadFolder = 'transfer/UploadDir';
 personalSettings.locDownloadFolder = 'transfer/DownloadDir';
 
 %% Batch file and PBS settings
+% Scheduler running on the cluster. Choose 'PBS' or 'SLURM'.
+% Uni Hannover Cluster migrated from PBS to SLURM in 2022.
+% The syntax for some commands is slightly different.
+batchSettings.scheduler = 'SLURM';
 % number of nodes to use [1, 9], (only one node will be used as long as
 % 'distributed computing server' is not supported by your Cluster system)
 batchSettings.nodes = 1;
@@ -27,13 +31,18 @@ batchSettings.time = 0.25;
 batchSettings.mem = 2;
 % name of the job
 batchSettings.name = 'myFirstJob';
-% mail address all job notifications are send to send mail in case of:
-% job cancel ('a'), job begin ('b'), job end ('e'). Default: 'abe'
+% mail address all job notifications are send to 
 batchSettings.mailName = 'yourMailadress@yourDomain.com';
-batchSettings.mailType = 'abe';
-% job queue to use. Choose from 'all' (default), 'helena' (big jobs) and
-% 'test' (small test jobs)
-batchSettings.queue = 'all';
+% Cases in which mail is sent:
+% PBS syntax: job cancel ('a'), job begin ('b'), job end ('e'). Default: 'abe'
+% batchSettings.mailType = 'abe'; % uncomment for PBS
+% SLURM syntax: BEGIN,END,FAIL
+batchSettings.mailType = 'BEGIN,END,FAIL'; % uncomment for SLURM
+% job queue (PBS) or partition (SLURM) to use.
+% PBS: Choose from 'all' (default) and the ones specified in the wiki
+% batchSettings.queue = 'all'; % uncomment for PBS
+% SLURM: Leave partition empty to allow all (default)
+batchSettings.queue = ''; % uncomment for SLURM
 % Matlab version to use (inform first, which modules are available)
 batchSettings.matVersion = 'MATLAB/2020a';
 % name of your main matlab script, located in first layer of your upload folder.

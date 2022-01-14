@@ -1,0 +1,30 @@
+#!/bin/bash -login
+#SBATCH --ntasks=?NODES?
+#SBATCH --nodes=?NODES?
+#SBATCH --cpus-per-task=?PPN?
+#SBATCH --time=?HOURS?:?MINUTES?:00
+#SBATCH --mem=?MEMORY?G
+#SBATCH --job-name=?NAME?
+#SBATCH --mail-user=?MAILADDRESS?
+#SBATCH --mail-type=?MAILTYPE?
+#SBATCH --partition=?QUEUE?
+
+# show which computer the job ran on
+echo "Job ran on:" $(hostname)
+
+# load the relevant modules
+module load GCCcore/.8.3.0 FFmpeg/.4.2.1
+module load ?MATVERSION?
+
+# change to work dir:
+cd ?WORKDIR?
+
+# log file name
+LOGFILE=$(echo $SLURM_JOB_ID | cut -d"." -f1).log
+
+# change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
+export HOME=$TMPDIR
+
+# the program to run
+matlab -nodesktop < ?MATFILE? > $LOGFILE 2>&1
+

@@ -9,7 +9,6 @@ function downloadUserData(ps, bs)
 
 %% ssh2 cofig
 ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
-ssh2_conn = ssh2_command(ssh2_conn, 'ls -la *ninjas*');
 
 %% put log files in download dir
 ps.extUploadFolderConcrete = [ps.extUploadFolder, '/upload', ps.dateString];

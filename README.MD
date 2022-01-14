@@ -1,6 +1,6 @@
 # Run Matlab Scripts on a PBS Computing Cluster
 
-This program enables you to perform large/computationally intensive jobs on a PBS (Portable Batch System) Computing Cluster directly out of Matlab. Some cluster providers do not support the Matlab integration of the MATLAB Parallel Server (formally Distributed Computing Server), e.g. due to license costs.
+This program enables you to perform large/computationally intensive jobs on a PBS (Portable Batch System) or SLURM (Simple Linux Utility for Resource Management) Computing Cluster directly out of Matlab. Some cluster providers do not support the Matlab integration of the MATLAB Parallel Server (formally Distributed Computing Server), e.g. due to license costs.
 
 Philipp Kortmann, philipp.kortmann@imes.uni-hannover.de, 2018-04  
 Moritz Schappler, moritz.schappler@imes.uni-hannover.de, 2020-09  
@@ -14,9 +14,13 @@ Moritz Schappler, moritz.schappler@imes.uni-hannover.de, 2020-09
 3. Create a copy of the file `userSettings.m` from the `templateFiles` directory and put it in the root directory of this toolbox.
 4. Enter all settings and SSH cluster user authentification, in particular your desired calculation resources in `userSettings.m` on.
   * in the current implementation the password has to be stored in clear text. Therefore restricting access to this file is a safety concern.
-5. Start your job by executing `jobStart.m`. Make a note of the job ID you have been given.
+5. Start your job by executing `jobStart.m`. Make a note of the job ID you have been given (if Email is not set up).
 6. The start and finish of your calculations will be communicated to you by e-mail, if supported by your cluster provider.
 7. After completing the calculations, you can download your results by executing `jobDownload.m` and entering your JobID.
+
+### Integration of the cluster support into Matlab toolchains
+
+Starting cluster jobs via `jobStart` can be included in other Matlab programs. The interface description can be obtained from the file header.
 
 ### Hints:
 

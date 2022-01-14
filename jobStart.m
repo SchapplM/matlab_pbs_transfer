@@ -62,7 +62,7 @@ dateString = ps.dateString;
 if nargin < 2
   startsettings = []; % Placeholder
 end
-jobID = startJob(ps, startsettings);
+jobID = startJob(ps, bs, startsettings);
 disp(['Your jobID: ', num2str(jobID)]);
 if ~exist('jobIDs', 'file'), mkdir('jobIDs'); end
 jobName = bs.name;

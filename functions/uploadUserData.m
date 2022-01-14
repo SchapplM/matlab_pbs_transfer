@@ -7,7 +7,7 @@
 function uploadUserData(ps)
 
 %% ssh2 config
-ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);         % configure ssh2 connection
+ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 ssh2_conn = ssh2_command(ssh2_conn, ['mkdir -p /tmp/', ps.username]);
 
 %% zip dir to upload
@@ -17,18 +17,17 @@ cd(ps.locUploadFolder);
 zip(dummyFilenameZip, listing);
 
 %% upload zip file and delete local zip file
-ssh2_conn = sftp_put(ssh2_conn, ...                                     % upload zip file
-     [dummyFilenameZip, '.zip'], ...
-     ['/tmp/', ps.username]);
-delete([dummyFilenameZip, '.zip']);                                     % delete local zip file
-cd(ps.locPath);                                                         % change dir back to local home dir
+ssh2_conn = sftp_put(ssh2_conn, [dummyFilenameZip, '.zip'], ...
+  ['/tmp/', ps.username]);
+delete([dummyFilenameZip, '.zip']); % delete local zip file
+cd(ps.locPath); % change dir back to local home dir
 
 %% unzip uploaded zip-file on server
 ssh2_conn = ssh2_command(ssh2_conn, ['mkdir -p ' ps.extUploadFolderConcrete]);
-ssh2_conn = ssh2_command(ssh2_conn, ...                                 % unzip uploadesd zip file to new dir
-    ['unzip ', '/tmp/', ps.username,'/', dummyFilenameZip, '.zip -d ', ps.extUploadFolderConcrete]);
-ssh2_conn = ssh2_command(ssh2_conn, ...                                 % delete zip file
+ssh2_conn = ssh2_command(ssh2_conn, ... % unzip uploaded zip file to new dir
+    ['unzip ', '/tmp/', ps.username,'/', dummyFilenameZip, '.zip -d ', ps.extUploadFolderConcrete], 1);
+ssh2_conn = ssh2_command(ssh2_conn, ... % delete zip file
     ['rm -rf ', '/tmp/', ps.username,'/', dummyFilenameZip, '.zip']);
 
 %% close ssh2 connection
-ssh2_conn = ssh2_close(ssh2_conn);
+ssh2_close(ssh2_conn);
