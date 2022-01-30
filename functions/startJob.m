@@ -6,7 +6,7 @@
 % startsettings [optional], struct. field/value pairs for dependencies of
 %   the job. Fields, see `man qsub` on the cluster. Examples
 %   fields: afterok, afternotok, ...
-%   values: array with job IDs
+%   values: array with job IDs. May be empty (as a default structure)
 
 % Philipp Kortmann, 2018/04/17
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
@@ -25,18 +25,21 @@ ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password); % configure ssh2
 %% Generate dependencies
 % See `man qsub` (PBS) or `man sbatch` (SLURM) on the cluster
 dependstr = '';
-%  -W depend=afterok:7546567
+% Example:
+% -W depend=afterok:7546567 (PBS)
+% --dependency=afternotok:207990 (SLURM)
 if nargin >= 3 && ~isempty(startsettings)
   if strcmp(bs.scheduler, 'PBS')
     dependstr = '-W depend=';
   else % SLURM
     dependstr = '--dependency=';
   end
-  for f = fields(startsettings)
+  for f = fields(startsettings)'
+    val = startsettings.(f{1}); % Values of fields like afterok, afternotok
+    if isempty(val), continue; end % skip empty fields
     % Add comma for additional dependencies
     if dependstr(end)~='=', dependstr=[dependstr,',']; end %#ok<AGROW>
     % assemble arguments
-    val = startsettings.(f{1});
     dependstr = [dependstr, f{1}]; %#ok<AGROW>
     % set values
     for i = 1:length(val)
@@ -50,7 +53,6 @@ if strcmp(bs.scheduler, 'PBS')
 else % SLURM
   cmdline_qsub = 'sbatch ';
 end
-
 cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
   '/upload', ps.dateString, '/batchJob.sh'];
 [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
