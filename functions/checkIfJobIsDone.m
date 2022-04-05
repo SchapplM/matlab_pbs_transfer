@@ -37,14 +37,15 @@ if ~exist(jobfilename, 'file')
   % Get job name from eventual output file in main directory
   [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ...
     ['find ~', ' -maxdepth 1 -name "*.o', num2str(ps.jobID), '"']);
-  if isempty(cmd)
-    error('No output file found on server');
+  if isempty(cmd{1})
+    warning('No output file found on server');
+  else
+    tokens = regexp(cmd{1}, ['/([a-zA-Z0-9_]+).o', num2str(ps.jobID), '$'], 'tokens');
+    if isempty(tokens)
+      error('No match of jobName in file path on server');
+    end
+    jobName = tokens{1}{1};
   end
-  tokens = regexp(cmd{1}, ['/([a-zA-Z0-9_]+).o', num2str(ps.jobID), '$'], 'tokens');
-  if isempty(tokens)
-    error('No match of jobName in file path on server');
-  end
-  jobName = tokens{1}{1};
 else
   load(jobfilename, 'jobID', ...
     'dateString', 'jobName', 'bs'); % load locally saved jobID and dateString
