@@ -5,13 +5,12 @@
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
 %% clean & set up workspace
-this_path = fileparts( mfilename('fullpath') );
-cd(this_path); % Change directory to make the script work
 clc();
 clearvars();
 close all;
-addpath('functions'); % add subfunctions
-addpath(fullfile('functions','matlab-ssh2-master','ssh2'));
+tbpath = fileparts(which('cluster_transfer_toolbox_path_init.m'));
+addpath(fullfile(tbpath, 'functions')); % add subfunctions
+addpath(fullfile(tbpath, 'functions', 'matlab-ssh2-master','ssh2'));
 %% general settings
 [personalSettings, batchSettings] = userSettings(); % load user settings
 personalSettings = jobAuthentication(personalSettings); % load personal authentication data
@@ -28,7 +27,8 @@ else
 end
 
 %% clean up workspace
-rmpath('functions');
-rmpath(fullfile('functions','matlab-ssh2-master','ssh2'));
+tbpath = fileparts(which('cluster_transfer_toolbox_path_init.m'));
+rmpath(fullfile(tbpath, 'functions'));
+rmpath(fullfile(tbpath, 'functions', 'matlab-ssh2-master','ssh2'));
 clearvars();
 close all;
