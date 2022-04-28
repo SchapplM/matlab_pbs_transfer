@@ -7,6 +7,7 @@
 
 function downloadUserData(ps, bs)
 
+tbpath = fileparts(which('cluster_transfer_toolbox_path_init.m'));
 %% ssh2 cofig
 ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 
@@ -24,7 +25,7 @@ ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.o', num2str(ps.jobID), ' ', ps.ext
 
 %% ssh2 download zip-file via sftp
 [ssh2_conn, cmdZip] = ssh2_command(ssh2_conn, ['zip -r download.zip ', ps.extDownloadFolder]);
-ssh2_conn = ssh2_close(ssh2_conn);
+ssh2_close(ssh2_conn);
 ssh2_conn = scp_simple_get(ps.hostname, ps.username, ps.password, 'download.zip');
 
 %% remove zip file from server
@@ -43,5 +44,6 @@ unzip('download.zip', 'downloadDummy');                                 % unzip 
 delete('download.zip');                                                 % remove downloaded local zip file after unzipping
 if ~exist(ps.locDownloadFolder, 'file'), mkdir(ps.locDownloadFolder); end
 movefile(['downloadDummy', ps.extDownloadFolder], ...
-    [ps.locDownloadFolder, '/', datestr(datetime('now'), 'yyyymmdd_HHMMSS'), '_jobID', num2str(ps.jobID)]);
+    fullfile(tbpath, ps.locDownloadFolder, [datestr(datetime('now'), ...
+    'yyyymmdd_HHMMSS'), '_jobID', num2str(ps.jobID)]));
 rmdir('downloadDummy', 's');                                            % remove dummy folder
