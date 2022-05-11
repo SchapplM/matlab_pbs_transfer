@@ -5,7 +5,7 @@
 %   structure with the fields of userSettings.m and jobSettings.m that will
 %   be overwritten regarding the content of the files. This can be used
 %   when calling this function from another Matlab script.
-% startsettings
+% startsettings_in
 %   Additionally, the fields of the input structure from startJob.m can be
 %   set as well to define dependencies for starting the job.
 %   The order of fields is given to the job query command and determines
@@ -20,7 +20,7 @@
 % Philipp Kortmann, 2018/04/17
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
-function jobID = jobStart(settings, startsettings)
+function jobID = jobStart(settings, startsettings_in)
 
 %% Init
 % add path to subfunctions
@@ -30,6 +30,15 @@ fcndir = fullfile(fileparts(which('jobStart.m')), 'functions');
 addpath(fcndir);
 addpath(fullfile(fcndir, 'matlab-ssh2-master','ssh2'));
 
+if nargin < 2
+  startsettings_in = struct();
+end
+startsettings_gen = struct('waittime_max', 0, 'retry_interval', 60); % for general settings
+for f = fields(startsettings_in)'
+  if any(strcmp(f{1}, {'waittime_max', 'retry_interval'}))
+    startsettings_gen.f{1} = startsettings_in.(f{1});
+  end
+end
 %% general settings
 if ~exist('userSettings.m', 'file')
   error(['The file userSettings.m has to be created as a modified copy ', ...
@@ -55,18 +64,29 @@ end
 ps = createJobFile(bs, ps);
 
 %% upload personal data from upload folder by using sftp-protocol
-uploadUserData(ps);
+t0 = tic();
+while true % try uploading until successful or timeout
+  try
+    uploadUserData(ps);
+    break;
+  catch err
+    warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
+  end
+  if startsettings_gen.waittime_max > toc(t0)
+    break;
+  end
+  fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
+    startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0))/60);
+  pause(startsettings_gen.retry_interval);
+end
 dateString = ps.dateString;
 
 %% start job
-if nargin < 2
-  startsettings = []; % Placeholder
-end
-jobID = startJob(ps, bs, startsettings);
+jobID = startJob(ps, bs, startsettings_in);
 disp(['Your jobID: ', num2str(jobID)]);
 if ~exist('jobIDs', 'file'), mkdir('jobIDs'); end
 jobName = bs.name;
-save([ps.locPath, '/jobIDs/jobID', num2str(jobID), '.mat'], ...
+save(fullfile(ps.locPath, 'jobIDs', ['jobID', num2str(jobID), '.mat']), ...
   'jobID', 'dateString', 'jobName', 'bs');
 
 %% Exit

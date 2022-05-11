@@ -52,6 +52,11 @@ if nargin >= 3 && ~isempty(startsettings_in)
   for f = fields(startsettings_in)'
     if any(strcmp(f{1}, {'waittime_max', 'retry_interval'})), continue; end
     val = startsettings_in.(f{1}); % Values of fields like afterok, afternotok
+    I_ok = ~isnan(val);
+    if ~all(I_ok)
+      warning('Values for field %s are non-integer. Ignore these', f{1});
+    end
+    val = val(I_ok);
     if isempty(val), continue; end % skip empty fields
     % Add comma for additional dependencies
     if dependstr(end)~='=', dependstr=[dependstr,',']; end %#ok<AGROW>
@@ -73,8 +78,12 @@ else % SLURM
 end
 cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
   '/upload', ps.dateString, '/batchJob.sh']; %#ok<AGROW> 
-[ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
-
+try
+  [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
+catch err
+  warning('startJob:SSH_error', 'Error running the job via ssh: %s', err.message);
+  cmdResponse = {''};
+end
 % read jobID from command response
 jobID = 0;
 if strcmp(bs.scheduler, 'PBS')
@@ -94,7 +103,7 @@ else
     break;
   end
   fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
-    startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0)/60));
+    startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0))/60);
   pause(startsettings_gen.retry_interval);
 end
 end
