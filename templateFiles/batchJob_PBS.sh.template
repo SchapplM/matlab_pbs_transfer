@@ -7,9 +7,6 @@
 #PBS -m ?MAILTYPE?
 #PBS -q ?QUEUE?
 
-# show which computer the job ran on
-echo "Job ran on:" $(hostname)
-
 # load the relevant modules
 module load GCCcore/.8.3.0 FFmpeg/.4.2.1
 module load ?MATVERSION?
@@ -17,16 +14,19 @@ module load ?MATVERSION?
 # change to work dir:
 cd ?WORKDIR?
 
-# work out the number of threads
-export NUM_THREADS=$(wc -l $PBS_NODEFILE | cut -d" " -f1)
-
 # log file name
 LOGFILE=$(echo $PBS_JOBID | cut -d"." -f1).log
+
+# back up the job log file (if existing due to previous NODE_FAIL)
+if [[ -f $LOGFILE ]]; then
+  mv "$LOGFILE" "${LOGFILE}_backup_`date '+%Y%m%d_%H%M%S'`"
+fi
 
 # change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
 export HOME=$TMPDIR
 
-# the program to run. Use >> to append to log file in case of multiple starts in case of NODE_FAIL
-echo "`date` - run ?MATFILE? using Matlab" >> $LOGFILE
+# show which computer the job ran on
+echo "Job runs on:" $(hostname) > $LOGFILE
+echo "Start: `date`" >> $LOGFILE
+echo "Run ?MATFILE? using Matlab" >> $LOGFILE
 matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1
-
