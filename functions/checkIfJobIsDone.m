@@ -11,9 +11,10 @@ function [boolDone, ps, bs] = checkIfJobIsDone(ps, bs_in)
 %% ssh2 config
 ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 
-%% ask for jobID
-ps.jobID = str2double(input('What is your job-ID?\n', 's'));
-
+%% ask for jobID (if not given)
+if ~isfield(ps, 'jobID') || ps.jobID == 0
+  ps.jobID = str2double(input('What is your job-ID?\n', 's'));
+end
 %% check if job is done
 jobfilename = fullfile(ps.locPath,'jobIDs',['jobID',num2str(ps.jobID),'.mat']);
 if ~exist(jobfilename, 'file')
