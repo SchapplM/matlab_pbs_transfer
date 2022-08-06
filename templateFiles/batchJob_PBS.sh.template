@@ -30,3 +30,5 @@ echo "Job runs on:" $(hostname) > $LOGFILE
 echo "Start: `date`" >> $LOGFILE
 echo "Run ?MATFILE? using Matlab" >> $LOGFILE
 matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1
+echo "Matlab script finished with code $?" >> $LOGFILE
+echo "End: `date`" >> $LOGFILE
