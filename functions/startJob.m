@@ -32,7 +32,7 @@ ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password); % configure ssh2
 % See `man qsub` (PBS) or `man sbatch` (SLURM) on the cluster
 dependstr = '';
 startsettings_dep = struct(); % for dependencies of the job
-startsettings_gen = struct('waittime_max', 0, 'retry_interval', 60); % for general settings
+startsettings_gen = struct('waittime_max', 3600*3, 'retry_interval', 60); % for general settings
 for f = fields(startsettings_in)'
   if any(strcmp(f{1}, {'waittime_max', 'retry_interval'}))
     startsettings_gen.f{1} = startsettings_in.(f{1});
@@ -99,7 +99,7 @@ else
   warning('Unexpected output. Job ID not found: %s', cmdResponse{1,1});
   disp('ERROR: Job did not start well (no job ID)');
   disp(['Command to start the job (on the server): "', cmdline_qsub, '"']);
-  if startsettings_gen.waittime_max > toc(t0)
+  if toc(t0) > startsettings_gen.waittime_max
     break;
   end
   fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
