@@ -31,6 +31,7 @@ export HOME=$TMPDIR
 
 # show which computer the job ran on
 echo "Job runs on:" $(hostname) > $LOGFILE
+echo "Working directory:" $(pwd) > $LOGFILE
 while true; do
 echo "Start: `date`" >> $LOGFILE
 echo "Run ?MATFILE? using Matlab" >> $LOGFILE
