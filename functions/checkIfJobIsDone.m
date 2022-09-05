@@ -25,7 +25,7 @@ if ~exist(jobfilename, 'file')
   % Search for log and output files in the expected directories and extract
   % the required information to proceed checking the status of the job.
   [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ...
-    ['find ', ps.extUploadFolder, ' -name "', num2str(ps.jobID), '.log"']);
+    ['find ', ps.extUploadFolder, ' -name "', num2str(ps.jobID), '.log*"']);
   if isempty(cmd)
     error('Log file not found on server');
   end

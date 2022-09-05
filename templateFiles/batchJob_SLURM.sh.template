@@ -47,3 +47,4 @@ if [[ `grep "fl:filesystem:PathNotFound" $LOGFILE | wc -l` -gt 0 ]]; then
 fi
 break
 done
+gzip $LOGFILE

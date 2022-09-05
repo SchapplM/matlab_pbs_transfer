@@ -19,7 +19,7 @@ ps.extUploadFolderConcrete = [ps.extUploadFolder, '/upload', ps.dateString];
 [~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/batchJob.sh ' ps.extDownloadFolder]);
 
 % Download log and error output of the job
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', num2str(ps.jobID), '.log ' ps.extDownloadFolder]);
+[~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', num2str(ps.jobID), '.log* ' ps.extDownloadFolder]);
 [~,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.e', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
 [~,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.o', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
 
