@@ -63,11 +63,14 @@ end
 %% create and upload batch job file
 ps = createJobFile(bs, ps);
 
+%% Initialize SSH session
+ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
+
 %% upload personal data from upload folder by using sftp-protocol
 t0 = tic();
 while true % try uploading until successful or timeout
   try
-    uploadUserData(ps);
+    uploadUserData(ssh2_conn, ps);
     break;
   catch err
     warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
@@ -78,11 +81,12 @@ while true % try uploading until successful or timeout
   fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
     startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0))/60);
   pause(startsettings_gen.retry_interval);
+  ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 end
 dateString = ps.dateString;
 
 %% start job
-jobID = startJob(ps, bs, startsettings_in);
+jobID = startJob(ssh2_conn, ps, bs, startsettings_in);
 disp(['Your jobID: ', num2str(jobID)]);
 if ~exist('jobIDs', 'file'), mkdir('jobIDs'); end
 jobName = bs.name;
@@ -90,4 +94,5 @@ save(fullfile(ps.locPath, 'jobIDs', ['jobID', num2str(jobID), '.mat']), ...
   'jobID', 'dateString', 'jobName', 'bs');
 
 %% Exit
+ssh2_close(ssh2_conn);
 cd(olddir);

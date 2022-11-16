@@ -1,6 +1,8 @@
 % Submit the job to the job manager by submitting the batch file.
 % 
 % Input:
+% ssh2_conn
+%   Object for the SSH connection
 % ps
 %   personal settings
 % startsettings_in [optional], struct. 
@@ -14,7 +16,7 @@
 % Philipp Kortmann, 2018/04/17
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
-function jobID = startJob(ps, bs, startsettings_in)
+function jobID = startJob(ssh2_conn, ps, bs, startsettings_in)
 % Check validity of input (to protect against deprecated settings files)
 if ~isfield(bs, 'scheduler')
   error('Field "scheduler" not defined for batch settings');
@@ -24,9 +26,6 @@ end
 if nargin < 3
   startsettings_in = struct();
 end
-
-%% ssh2 config
-ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password); % configure ssh2 connection
 
 %% Generate dependencies, split input settings struct
 % See `man qsub` (PBS) or `man sbatch` (SLURM) on the cluster
@@ -78,6 +77,7 @@ else % SLURM
 end
 cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
   '/upload', ps.dateString, '/batchJob.sh']; %#ok<AGROW> 
+pause(0.050 + rand()*0.100);
 try
   [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
 catch err
@@ -107,5 +107,3 @@ else
   pause(startsettings_gen.retry_interval);
 end
 end
-%% close ssh2
-ssh2_close(ssh2_conn);
