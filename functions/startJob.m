@@ -34,7 +34,7 @@ startsettings_dep = struct(); % for dependencies of the job
 startsettings_gen = struct('waittime_max', 3600*3, 'retry_interval', 60); % for general settings
 for f = fields(startsettings_in)'
   if any(strcmp(f{1}, {'waittime_max', 'retry_interval'}))
-    startsettings_gen.f{1} = startsettings_in.(f{1});
+    startsettings_gen.(f{1}) = startsettings_in.(f{1});
     continue;
   end
   startsettings_dep.(f{1}) = startsettings_in.(f{1});
