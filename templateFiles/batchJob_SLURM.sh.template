@@ -29,6 +29,9 @@ fi
 # change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
 export HOME=$TMPDIR
 
+# use the Job id as environment variable (to use it inside the Matlab log)
+export JOBID=$SLURM_JOB_ID
+
 # show which computer the job ran on
 echo "Job runs on:" $(hostname) > $LOGFILE
 echo "Working directory:" $(pwd) > $LOGFILE
