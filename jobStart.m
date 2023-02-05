@@ -6,12 +6,14 @@
 %   be overwritten regarding the content of the files. This can be used
 %   when calling this function from another Matlab script.
 % startsettings_in
+%   Fields from cluster dependency management: afterok, afternotok, ...
+%   The fields are given to the job query command and determine
+%   the logic of multiple dependencies. See `man qsub` on the cluster.
+%   Each of these fields has for a value an array with job IDs.
 %   Additionally, the fields of the input structure from startJob.m can be
 %   set as well to define dependencies for starting the job.
-%   The order of fields is given to the job query command and determines
-%   the logic of multiple dependencies. See `man qsub` on the cluster.
-%   fields: afterok, afternotok, ...
-%   values: array with job IDs
+%   .waittime_max: maximum waiting time in case of no success for job start
+%   .retry_interval: interval for retry of job start in seconds
 % 
 % Output:
 % jobID
@@ -33,10 +35,10 @@ addpath(fullfile(fcndir, 'matlab-ssh2-master','ssh2'));
 if nargin < 2
   startsettings_in = struct();
 end
-startsettings_gen = struct('waittime_max', 0, 'retry_interval', 60); % for general settings
+startsettings_gen = struct('waittime_max', inf, 'retry_interval', 60); % for general settings
 for f = fields(startsettings_in)'
-  if any(strcmp(f{1}, {'waittime_max', 'retry_interval'}))
-    startsettings_gen.f{1} = startsettings_in.(f{1});
+  if isfield(startsettings_gen, f{1})
+    startsettings_gen.(f{1}) = startsettings_in.(f{1});
   end
 end
 %% general settings
@@ -75,7 +77,7 @@ while true % try uploading until successful or timeout
   catch err
     warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
   end
-  if startsettings_gen.waittime_max > toc(t0)
+  if toc(t0) > startsettings_gen.waittime_max
     break;
   end
   fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
