@@ -7,18 +7,17 @@
 
 function ps = createJobFile(bs, ps)
 
-%% copy content of template batch file
+%% Load content of template batch file
 if ~isfield(bs, 'scheduler')
   error('Field "scheduler" not defined for batch settings');
 elseif strcmp(bs.scheduler, 'PBS')
-  templatefile = 'templateFiles/batchJob_PBS.sh.template';
+  templatefile = fullfile(ps.locPath, 'templateFiles', 'batchJob_PBS.sh.template');
 elseif strcmp(bs.scheduler, 'SLURM')
-  templatefile = 'templateFiles/batchJob_SLURM.sh.template';
+  templatefile = fullfile(ps.locPath, 'templateFiles', 'batchJob_SLURM.sh.template');
 else
   error('Case "%s" not defined for batch setting "scheduler"', bs.scheduler);
 end
-copyfile(templatefile, 'templateFiles/batchJob.sh');
-fileID = fopen('templateFiles/batchJob.sh', 'r');
+fileID = fopen(templatefile, 'r');
 s = textscan(fileID, '%s', 'Delimiter', '\n');
 fclose(fileID);
 
@@ -26,8 +25,8 @@ fclose(fileID);
 ps.dateString = datestr(datetime('now'), 'yyyymmdd_HHMMSS');
 ps.extUploadFolderConcrete = [ps.extUploadFolder, '/upload', ps.dateString];
 [hours, minutes] = getHoursAndMinutes(bs.time);
-% Open output file again for writing
-fileID = fopen('templateFiles/batchJob.sh', 'w');
+% Open output file for writing
+fileID = fopen(fullfile(ps.locUploadFolder, bs.batFileName), 'w');
 for i = 1:length(s{1})
   line = s{1}{i};
   % exchange PBS variables
@@ -55,6 +54,3 @@ for i = 1:length(s{1})
   fprintf(fileID, '%s\n', line);
 end
 fclose(fileID);
-
-%% copy batch file to upload dir
-copyfile('templateFiles/batchJob.sh', ps.locUploadFolder);

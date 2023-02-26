@@ -76,7 +76,7 @@ else % SLURM
   cmdline_qsub = 'sbatch ';
 end
 cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
-  '/upload', ps.dateString, '/batchJob.sh']; %#ok<AGROW> 
+  '/upload', ps.dateString, '/', bs.batFileName]; %#ok<AGROW> 
 pause(0.050 + rand()*0.100);
 try
   [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);

@@ -47,5 +47,7 @@ batchSettings.queue = ''; % uncomment for SLURM
 batchSettings.matVersion = 'MATLAB/2020a';
 % name of your main matlab script, located in first layer of your upload folder.
 batchSettings.matFileName = 'example.m';
+% Name of the batch file (has to be defined for internal reasons)
+batchSettings.batFileName = 'batchJob.sh';
 
 % For advanced settings, see functions/jobSettings.m
