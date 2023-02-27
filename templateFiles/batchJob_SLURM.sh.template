@@ -26,11 +26,13 @@ if [[ -f $LOGFILE ]]; then
   mv "$LOGFILE" "${LOGFILE}_backup_`date '+%Y%m%d_%H%M%S'`"
 fi
 
-# change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
-export HOME=$TMPDIR
-
 # use the Job id as environment variable (to use it inside the Matlab log)
 export JOBID=$SLURM_JOB_ID
+
+# change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
+# do not use temporary directory to keep log files in case of crash
+TMPHOME=$BIGWORK/JOBHOMES/$JOBID
+mkdir -p $TMPHOME
 
 # show which computer the job ran on
 echo "Job runs on:" $(hostname) > $LOGFILE
@@ -38,7 +40,7 @@ echo "Working directory:" $(pwd) > $LOGFILE
 while true; do
 echo "Start: `date`" >> $LOGFILE
 echo "Run ?MATFILE? using Matlab" >> $LOGFILE
-matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1
+(export HOME=$TMPHOME && matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1)
 echo "Matlab script finished with code $?" >> $LOGFILE
 echo "End: `date`" >> $LOGFILE
 # look into the log and check for filesystem-related reasons for abortion
