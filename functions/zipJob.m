@@ -44,11 +44,14 @@ for i = 1:length(s{1})
   % write batch file
   fprintf(fileID, '%s\n', line);
 end
-
-fprintf(fileID, 'LOGFILE=%s/%d.log\n', ps.extUploadFolderConcrete, jobID);
-fprintf(fileID, 'if [ -f $LOGFILE ]; then\n');
-fprintf(fileID, 'gzip $LOGFILE\n');
+fprintf(fileID, 'LOGFILE=$(echo $SLURM_JOB_ID | cut -d"." -f1).log\n');
+fprintf(fileID, 'LOGFILETOZIP=%s/%d.log\n', ps.extUploadFolderConcrete, jobID);
+fprintf(fileID, 'echo "Zip job for log file $LOGFILETOZIP" > $LOGFILE\n');
+fprintf(fileID, 'echo "Start: `date`" >> $LOGFILE\n');
+fprintf(fileID, 'if [ -f $LOGFILETOZIP ]; then\n');
+fprintf(fileID, 'gzip $LOGFILETOZIP\n');
 fprintf(fileID, 'fi\n');
+fprintf(fileID, 'echo "End: `date`" >> $LOGFILE\n');
 
 %% Upload the zip job start file
 cd(fullfile(ps.locPath, 'templateFiles'));
