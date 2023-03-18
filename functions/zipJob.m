@@ -1,9 +1,22 @@
 % create and start a job for zipping the log file of a previous job
+% 
+% Input:
+% ssh2_conn
+%   Object for the SSH connection
+% ps
+%   personal settings
+% bs
+%   batch settings
+% jobID
+%   ID of the job from which the log file shall be compressed
+% startsettings_in [optional], struct. 
+%   .waittime_max: maximum waiting time in case of no success for job start
+%   .retry_interval: interval for retry of job start in seconds
 
-% Philipp Kortmann, 2023/02/26
+% Moritz Schappler, 2023/02/26
 % (C) Institut für Mechatronische Systeme, Leibniz Universität Hannover
 
-function zipJob(ssh2_conn, ps, bs, jobID)
+function zipJob(ssh2_conn, ps, bs, jobID, startsettings_in)
 
 %% Load content of template batch file
 if ~isfield(bs, 'scheduler')
@@ -15,13 +28,24 @@ elseif strcmp(bs.scheduler, 'SLURM')
 else
   error('Case "%s" not defined for batch setting "scheduler"', bs.scheduler);
 end
+% Process settings for waiting time. Use the same waiting time for the zip
+% job as for the previous productive job and the same default values
+if nargin < 5
+  startsettings_in = struct();
+end
+startsettings_gen = struct('waittime_max', 3600*3, 'retry_interval', 60);
+for f = fields(startsettings_gen)'
+  if isfield(startsettings_in, f{1})
+    startsettings_gen.(f{1}) = startsettings_in.(f{1});
+  end
+end
 
 fileID = fopen(templatefile, 'r');
 s = textscan(fileID, '%s', 'Delimiter', '\n');
 fclose(fileID);
 
 %% Create a second job file for zipping the log file
-jobfile = fullfile(ps.locPath, 'templateFiles', 'batchJob_log.sh');
+jobfile = fullfile(ps.locPath, 'templateFiles', 'batchJob_ziplog.sh');
 fileID = fopen(jobfile, 'w');
 for i = 1:length(s{1})
   line = s{1}{i};
@@ -45,23 +69,26 @@ for i = 1:length(s{1})
   fprintf(fileID, '%s\n', line);
 end
 fprintf(fileID, 'LOGFILE=$(echo $SLURM_JOB_ID | cut -d"." -f1).log\n');
-fprintf(fileID, 'LOGFILETOZIP=%s/%d.log\n', ps.extUploadFolderConcrete, jobID);
+fprintf(fileID, 'LOGFILETOZIP=%d.log\n', jobID);
+fprintf(fileID, 'cd %s\n', ps.extUploadFolderConcrete);
 fprintf(fileID, 'echo "Zip job for log file $LOGFILETOZIP" > $LOGFILE\n');
 fprintf(fileID, 'echo "Start: `date`" >> $LOGFILE\n');
 fprintf(fileID, 'if [ -f $LOGFILETOZIP ]; then\n');
-fprintf(fileID, 'gzip $LOGFILETOZIP\n');
+% Write verbosity output of gzip (going to stderr) to the log
+fprintf(fileID, 'gzip $LOGFILETOZIP -v 2>> $LOGFILE\n');
 fprintf(fileID, 'fi\n');
 fprintf(fileID, 'echo "End: `date`" >> $LOGFILE\n');
 
 %% Upload the zip job start file
 cd(fullfile(ps.locPath, 'templateFiles'));
-ssh2_conn = sftp_put(ssh2_conn, 'batchJob_log.sh', ...
+ssh2_conn = sftp_put(ssh2_conn, 'batchJob_ziplog.sh', ...
   ps.extUploadFolderConcrete);
 cd(fullfile(ps.locPath));
 
 %% Start zip job
 bs2 = bs;
-bs2.batFileName = 'batchJob_log.sh';
-startsettings = struct('afterany', jobID);
+bs2.batFileName = 'batchJob_ziplog.sh';
+startsettings = startsettings_gen;
+startsettings.afterany = jobID;
 jobID2 = startJob(ssh2_conn, ps, bs2, startsettings);
 fprintf('jobID for logging results: %d\n', jobID2);

@@ -96,7 +96,7 @@ save(fullfile(ps.locPath, 'jobIDs', ['jobID', num2str(jobID), '.mat']), ...
   'jobID', 'dateString', 'jobName', 'bs');
 
 %% create and start second job file for zipping the log file
-zipJob(ssh2_conn, ps, bs, jobID);
+zipJob(ssh2_conn, ps, bs, jobID, startsettings_in);
 
 %% Exit
 ssh2_close(ssh2_conn);
