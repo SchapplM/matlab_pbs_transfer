@@ -99,5 +99,9 @@ save(fullfile(ps.locPath, 'jobIDs', ['jobID', num2str(jobID), '.mat']), ...
 zipJob(ssh2_conn, ps, bs, jobID, startsettings_in);
 
 %% Exit
-ssh2_close(ssh2_conn);
+try % error may occure here if internet connection fails
+  ssh2_close(ssh2_conn);
+catch err
+  warning(sprintf('Error closing the ssh connection. Assume closed. %s', err.message)); %#ok<SPWRN> 
+end
 cd(olddir);
