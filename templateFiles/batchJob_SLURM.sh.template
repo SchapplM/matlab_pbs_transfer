@@ -21,11 +21,6 @@ cd ?WORKDIR?
 # log file name
 LOGFILE=$(echo $SLURM_JOB_ID | cut -d"." -f1).log
 
-# back up the job log file (if existing due to previous NODE_FAIL)
-if [[ -f $LOGFILE ]]; then
-  mv "$LOGFILE" "${LOGFILE}_backup_`date '+%Y%m%d_%H%M%S'`"
-fi
-
 # use the Job id as environment variable (to use it inside the Matlab log)
 export JOBID=$SLURM_JOB_ID
 
@@ -34,22 +29,35 @@ export JOBID=$SLURM_JOB_ID
 TMPHOME=$BIGWORK/JOBHOMES/$JOBID
 mkdir -p $TMPHOME
 
-# show which computer the job ran on
-echo "Job runs on:" $(hostname) > $LOGFILE
-echo "Working directory:" $(pwd) >> $LOGFILE
+# run Matlab in endless loop to be able to restart upon error
 while true; do
-echo "Start: `date`" >> $LOGFILE
-echo "Run ?MATFILE? using Matlab" >> $LOGFILE
-(export HOME=$TMPHOME && matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1)
-echo "Matlab script finished with code $?" >> $LOGFILE
-echo "End: `date`" >> $LOGFILE
-# look into the log and check for filesystem-related reasons for abortion
-# These errors seem not to be able to be catched from within matlab
-if [[ `grep "fl:filesystem:PathNotFound" $LOGFILE | wc -l` -gt 0 ]]; then
-  echo "Error fl:filesystem:PathNotFound seems to have occured. Retry computation" >> $LOGFILE
-  sleep 60
-  continue
-fi
-break
+  # back up the job log file (if existing due to previous NODE_FAIL or other error)
+  if [[ -f $LOGFILE ]]; then
+    LOGFILE_BACKUP="${LOGFILE}_backup_`date '+%Y%m%d_%H%M%S'`"
+    mv "$LOGFILE" "$LOGFILE_BACKUP"
+    gzip $LOGFILE_BACKUP
+  fi
+  # show which computer the job ran on and print status information
+  echo "Job runs on:" $(hostname) > $LOGFILE
+  echo "Working directory:" $(pwd) >> $LOGFILE
+  echo "Start: `date`" >> $LOGFILE
+  echo "Run ?MATFILE? using Matlab" >> $LOGFILE
+  (export HOME=$TMPHOME && matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1)
+  echo "Matlab script finished with code $?" >> $LOGFILE
+  echo "End: `date`" >> $LOGFILE
+  # look into the log and check for filesystem-related reasons for abortion
+  # These errors seem not to be able to be catched from within Matlab
+  if [[ `grep "fl:filesystem:PathNotFound" $LOGFILE | wc -l` -gt 0 ]]; then
+    echo "Error fl:filesystem:PathNotFound seems to have occured. Retry computation" >> $LOGFILE
+    sleep 60
+    continue
+  fi
+  # look for other errors, related to the parallel pool
+  if [[ `grep "Error in parallel.internal" $LOGFILE | wc -l` -gt 0 ]] || [[ `grep "Error in distcomp.remoteparfor" $LOGFILE | wc -l` -gt 0 ]]; then
+    echo "Error within the parallel pool seems to have occured. Retry computation" >> $LOGFILE
+    sleep 60
+    continue
+  fi
+  break
 done
 gzip $LOGFILE
