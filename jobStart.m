@@ -75,7 +75,14 @@ while true % try uploading until successful or timeout
     uploadUserData(ssh2_conn, ps);
     break;
   catch err
-    warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
+    if contains(err.message, 'Sorry, this connection is closed')
+      pause(3); % short wait to avoid flooding the server with request
+      disp('SSH connection was closed. Restart session.');
+      ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
+      continue
+    else
+      warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
+    end
   end
   if toc(t0) > startsettings_gen.waittime_max
     break;

@@ -81,7 +81,14 @@ pause(0.050 + rand()*0.100);
 try
   [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
 catch err
-  warning('startJob:SSH_error', 'Error running the job via ssh: %s', err.message);
+  if contains(err.message, 'Sorry, this connection is closed')
+    pause(3); % short wait to avoid flooding the server with request
+    disp('SSH connection was closed. Restart session.');
+    ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
+    continue
+  else
+    warning('startJob:SSH_error', 'Error running the job via ssh: %s', err.message);
+  end
   cmdResponse = {''};
 end
 % read jobID from command response
