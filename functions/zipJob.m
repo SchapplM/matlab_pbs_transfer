@@ -81,8 +81,22 @@ fprintf(fileID, 'echo "End: `date`" >> $LOGFILE\n');
 
 %% Upload the zip job start file
 cd(fullfile(ps.locPath, 'templateFiles'));
-ssh2_conn = sftp_put(ssh2_conn, 'batchJob_ziplog.sh', ...
-  ps.extUploadFolderConcrete);
+while true
+  try
+    ssh2_conn = sftp_put(ssh2_conn, 'batchJob_ziplog.sh', ...
+      ps.extUploadFolderConcrete);
+    break
+  catch err
+    if contains(err.message, 'Sorry, this connection is closed')
+      pause(3); % short wait to avoid flooding the server with request
+      disp('SSH connection was closed. Restart session.');
+      ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
+      continue
+    else
+      warning('zipJob:SSH_error', 'Error uploading the zip job via ssh: %s', err.message);
+    end
+  end
+end
 cd(fullfile(ps.locPath));
 
 %% Start zip job
