@@ -36,16 +36,23 @@ if ~exist(jobfilename, 'file')
   dateString = tokens{1}{1};
   jobID = ps.jobID;
   % Get job name from eventual output file in main directory
-  [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ...
-    ['find ~', ' -maxdepth 1 -name "*.o', num2str(ps.jobID), '"']);
+  if isfield(bs_in, 'scheduler') && strcmp(bs_in.scheduler, 'PBS')
+    outfindcmd = ['find ~', ' -maxdepth 1 -name "*.o', num2str(ps.jobID), '"'];
+  else
+    outfindcmd = ['find ~', ' -maxdepth 1 -name "slurm-', num2str(ps.jobID), '.out"'];
+  end
+  [ssh2_conn, cmd] = ssh2_command(ssh2_conn, outfindcmd);
   if isempty(cmd{1})
     warning('No output file found on server');
   else
-    tokens = regexp(cmd{1}, ['/([a-zA-Z0-9_]+).o', num2str(ps.jobID), '$'], 'tokens');
-    if isempty(tokens)
-      error('No match of jobName in file path on server');
+    if isfield(bs_in, 'scheduler') && strcmp(bs_in.scheduler, 'PBS')
+      % ToDo: This code might be deprecated and a relic from PBS method
+      tokens = regexp(cmd{1}, ['/([a-zA-Z0-9_]+).o', num2str(ps.jobID), '$'], 'tokens');
+      if isempty(tokens)
+        error('No match of jobName in file path on server');
+      end
+      jobName = tokens{1}{1};
     end
-    jobName = tokens{1}{1};
   end
 else
   load(jobfilename, 'jobID', ...
@@ -77,12 +84,11 @@ if(jobID ~= 0) % if jobID looks real...
       filename = [jobName, '.o', num2str(jobID)];
     end
     [ssh2_conn, cmd] = ssh2_command(ssh2_conn, ['file ', filename]); % try to open file
-    if(strcmp(cmd{1,1}(end-9:end), 'ASCII text'))
+    if strcmp(cmd{1,1}(end-9:end), 'ASCII text') || ...
+       strcmp(cmd{1,1}(end-7:end), 'CSV text')
       boolDone = 1;  % content of the jobfile is correct
       break;
     end
   end
 end
 
-%% close ssh2
-ssh2_close(ssh2_conn);

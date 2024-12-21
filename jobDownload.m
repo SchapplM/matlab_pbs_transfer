@@ -13,7 +13,7 @@ assert(isa(jobid, 'double') && size(jobid,1)==1, ...
 % set up workspace
 tbpath = fileparts(which('cluster_transfer_toolbox_path_init.m'));
 addpath(fullfile(tbpath, 'functions')); % add subfunctions
-addpath(fullfile(tbpath, 'functions', 'matlab-ssh2-master','ssh2'));
+addpath(fullfile(tbpath, 'functions', 'matlab-ssh'));
 for jid = jobid(:)' % loop for downloading multiple jobs
   %% general settings
   [personalSettings, batchSettings] = userSettings(); % load user settings
@@ -24,7 +24,7 @@ for jid = jobid(:)' % loop for downloading multiple jobs
   personalSettings.jobID = jid;
   % get bool whether job has been completed yet
   [jobDone, personalSettings, batchSettings] = checkIfJobIsDone(personalSettings, batchSettings);
-  if(jobDone)
+  if jobDone
       downloadUserData(personalSettings, batchSettings);
   else
       disp('Job is not ready yet or has been aborted.');
@@ -32,4 +32,4 @@ for jid = jobid(:)' % loop for downloading multiple jobs
 end
 %% clean up workspace
 rmpath(fullfile(tbpath, 'functions'));
-rmpath(fullfile(tbpath, 'functions', 'matlab-ssh2-master','ssh2'));
+rmpath(fullfile(tbpath, 'functions', 'matlab-ssh'));

@@ -42,12 +42,13 @@ end
 % Example:
 % -W depend=afterok:7546567 (PBS)
 % --dependency=afternotok:207990 (SLURM)
-if nargin >= 3 && ~isempty(startsettings_in)
+if nargin >= 3 && ~isempty(fields((startsettings_in)))
   if strcmp(bs.scheduler, 'PBS')
     dependstr = '-W depend=';
   else % SLURM
     dependstr = '--dependency=';
   end
+  dependstr_empty = dependstr;
   for f = fields(startsettings_in)'
     if any(strcmp(f{1}, {'waittime_max', 'retry_interval'})), continue; end
     val = startsettings_in.(f{1}); % Values of fields like afterok, afternotok
@@ -66,51 +67,56 @@ if nargin >= 3 && ~isempty(startsettings_in)
       dependstr = [dependstr, sprintf(':%d', val(i))]; %#ok<AGROW>
     end
   end
+  if strcmp(dependstr_empty, dependstr)
+    dependstr = ''; % no dependencies. Remove argument
+  end
 end
 %% start batch job
 t0 = tic();
 while true
-if strcmp(bs.scheduler, 'PBS')
-  cmdline_qsub = 'qsub ';
-else % SLURM
-  cmdline_qsub = 'sbatch ';
-end
-cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
-  '/upload', ps.dateString, '/', bs.batFileName]; %#ok<AGROW> 
-pause(0.050 + rand()*0.100);
-try
-  [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
-catch err
-  if contains(err.message, 'Sorry, this connection is closed')
-    pause(3); % short wait to avoid flooding the server with request
-    disp('SSH connection was closed. Restart session.');
-    ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
-    continue
-  else
+  if strcmp(bs.scheduler, 'PBS')
+    cmdline_qsub = 'qsub ';
+  else % SLURM
+    cmdline_qsub = 'sbatch ';
+  end
+  cmdline_qsub = [cmdline_qsub, dependstr, ' ', ps.extUploadFolder, ...
+    '/upload', ps.dateString, '/', bs.batFileName]; %#ok<AGROW> 
+  pause(0.050 + rand()*0.100);
+  try
+    [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
+    if ssh2_conn.command_status
+      error('Start command for job failed:\n %s', char(ssh2_conn.command_result));
+    end
+  catch err
     warning('startJob:SSH_error', 'Error running the job via ssh: %s', err.message);
+    cmdResponse = {''};
   end
-  cmdResponse = {''};
-end
-% read jobID from command response
-jobID = 0;
-if strcmp(bs.scheduler, 'PBS')
-  % Expected form of output: "8264679.batch.css.lan"
-  tokens = regexp(cmdResponse{1,1}, '(\d+)\..*?', 'tokens');
-else % SLURM
-  tokens = regexp(cmdResponse{1,1}, 'Submitted batch job (\d+)', 'tokens');
-end
-if ~isempty(tokens)
-  jobID = str2double(tokens{1});
-  break;
-else
-  warning('Unexpected output. Job ID not found: %s', cmdResponse{1,1});
-  disp('ERROR: Job did not start well (no job ID)');
-  disp(['Command to start the job (on the server): "', cmdline_qsub, '"']);
-  if toc(t0) > startsettings_gen.waittime_max
-    break;
+  % read jobID from command response
+  jobID = 0;
+  for i = 1:length(cmdResponse)
+    if strcmp(bs.scheduler, 'PBS')
+      % Expected form of output: "8264679.batch.css.lan"
+      tokens = regexp(cmdResponse{i,1}, '(\d+)\..*?', 'tokens');
+    else % SLURM
+      tokens = regexp(cmdResponse{i,1}, 'Submitted batch job (\d+)', 'tokens');
+    end
+    if ~isempty(tokens)
+      jobID = str2double(tokens{1});
+      break;
+    end
   end
-  fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
-    startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0))/60);
-  pause(startsettings_gen.retry_interval);
-end
+  if jobID == 0
+    warning('Unexpected output. Job ID not found:');
+    disp(cmdResponse);
+    disp('ERROR: Job did not start well (no job ID)');
+    disp(['Command to start the job (on the server): "', cmdline_qsub, '"']);
+    if toc(t0) > startsettings_gen.waittime_max
+      break;
+    end
+    fprintf('Retry job upload in %1.1fs for the next %1.1f min.\n', ...
+      startsettings_gen.retry_interval, (startsettings_gen.waittime_max-toc(t0))/60);
+    pause(startsettings_gen.retry_interval);
+  else % Job has started successfully
+    break
+  end
 end

@@ -30,7 +30,7 @@ olddir = pwd();
 cd(fullfile(fileparts(which('jobStart.m')))); % required for some relative paths to work
 fcndir = fullfile(fileparts(which('jobStart.m')), 'functions');
 addpath(fcndir);
-addpath(fullfile(fcndir, 'matlab-ssh2-master','ssh2'));
+addpath(fullfile(fcndir, 'matlab-ssh'));
 
 if nargin < 2
   startsettings_in = struct();
@@ -72,17 +72,10 @@ ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 t0 = tic();
 while true % try uploading until successful or timeout
   try
-    uploadUserData(ssh2_conn, ps);
+    ssh2_conn = uploadUserData(ssh2_conn, ps);
     break;
   catch err
-    if contains(err.message, 'Sorry, this connection is closed')
-      pause(3); % short wait to avoid flooding the server with request
-      disp('SSH connection was closed. Restart session.');
-      ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
-      continue
-    else
-      warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
-    end
+    warning('jobStart:SSH_error', 'Error uploading the job via ssh: %s', err.message);
   end
   if toc(t0) > startsettings_gen.waittime_max
     break;
@@ -105,10 +98,5 @@ save(fullfile(ps.locPath, 'jobIDs', ['jobID', num2str(jobID), '.mat']), ...
 %% create and start second job file for zipping the log file
 zipJob(ssh2_conn, ps, bs, jobID, startsettings_in);
 
-%% Exit
-try % error may occure here if internet connection fails
-  ssh2_close(ssh2_conn);
-catch err
-  warning(sprintf('Error closing the ssh connection. Assume closed. %s', err.message)); %#ok<SPWRN> 
-end
+%% Exit (no more closing of connection necessary)
 cd(olddir);

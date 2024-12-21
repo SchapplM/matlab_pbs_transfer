@@ -45,7 +45,9 @@ s = textscan(fileID, '%s', 'Delimiter', '\n');
 fclose(fileID);
 
 %% Create a second job file for zipping the log file
-jobfile = fullfile(ps.locPath, 'templateFiles', 'batchJob_ziplog.sh');
+jobfilename =  'batchJob_ziplog.sh';
+jobfiledir = fullfile(ps.locPath, 'templateFiles');
+jobfile = fullfile(jobfiledir, jobfilename);
 fileID = fopen(jobfile, 'w');
 for i = 1:length(s{1})
   line = s{1}{i};
@@ -78,27 +80,20 @@ fprintf(fileID, 'if [ -f $LOGFILETOZIP ]; then\n');
 fprintf(fileID, 'gzip $LOGFILETOZIP -v 2>> $LOGFILE\n');
 fprintf(fileID, 'fi\n');
 fprintf(fileID, 'echo "End: `date`" >> $LOGFILE\n');
-
+fclose(fileID);
 %% Upload the zip job start file
-cd(fullfile(ps.locPath, 'templateFiles'));
 while true
   try
-    ssh2_conn = sftp_put(ssh2_conn, 'batchJob_ziplog.sh', ...
-      ps.extUploadFolderConcrete);
+    ssh2_conn = scp_put(ssh2_conn, jobfilename, ps.extUploadFolderConcrete, jobfiledir);
+    if ssh2_conn.command_status
+      error('Error uploading the zip file: %s', char(ssh2_conn.command_result));
+    end
     break
   catch err
-    if contains(err.message, 'Sorry, this connection is closed')
-      pause(3); % short wait to avoid flooding the server with request
-      disp('SSH connection was closed. Restart session.');
-      ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
-      continue
-    else
-      warning('zipJob:SSH_error', 'Error uploading the zip job via ssh: %s', err.message);
-    end
+    warning('zipJob:SSH_error', 'Error uploading the zip job via scp: %s', err.message);
+    pause(3); % short wait to avoid flooding the server with request
   end
 end
-cd(fullfile(ps.locPath));
-
 %% Start zip job
 bs2 = bs;
 bs2.batFileName = 'batchJob_ziplog.sh';

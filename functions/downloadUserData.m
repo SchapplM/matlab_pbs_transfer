@@ -8,31 +8,41 @@
 function downloadUserData(ps, bs)
 
 tbpath = fileparts(which('cluster_transfer_toolbox_path_init.m'));
-%% ssh2 cofig
+%% ssh2 config
 ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
 
 %% put log files in download dir
 ps.extUploadFolderConcrete = [ps.extUploadFolder, '/upload', ps.dateString];
-[~,~]=ssh2_command(ssh2_conn, ['mkdir -p ', ps.extDownloadFolder]);
+[ssh2_conn]=ssh2_command(ssh2_conn, ['mkdir -p ', ps.extDownloadFolder]);
+if ssh2_conn.command_status
+  error('Error creating tmp dir:\n%s', char(ssh2_conn.command_result));
+end
 % Prepare downloading the batch script for reproduction of the process
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', bs.matFileName, ' ', ps.extDownloadFolder]);
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/batchJob.sh ' ps.extDownloadFolder]);
+[ssh2_conn,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', bs.matFileName, ' ', ps.extDownloadFolder]);
+[ssh2_conn,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/batchJob.sh ' ps.extDownloadFolder]);
 
 % Download log and error output of the job
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', num2str(ps.jobID), '.log* ' ps.extDownloadFolder]);
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.e', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
-[~,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.o', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
+[ssh2_conn,~]=ssh2_command(ssh2_conn, ['cp -f ', ps.extUploadFolderConcrete, '/', num2str(ps.jobID), '.log* ' ps.extDownloadFolder]);
+% copy error and output file (does not work currently due to new filenames)
+% [ssh2_conn,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.e', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
+% [ssh2_conn,~]=ssh2_command(ssh2_conn, ['cp -f ', bs.name, '.o', num2str(ps.jobID), ' ', ps.extDownloadFolder]);
 
-%% ssh2 download zip-file via sftp
-[ssh2_conn, cmdZip] = ssh2_command(ssh2_conn, ['zip -r download.zip ', ps.extDownloadFolder]);
-ssh2_close(ssh2_conn);
-ssh2_conn = scp_simple_get(ps.hostname, ps.username, ps.password, 'download.zip', tbpath);
+%% download zip file
+tmpdir_remote = ['/home/', ps.username, '/tmp'];
+ssh2_conn = ssh2_command(ssh2_conn, ['mkdir -p ', tmpdir_remote]);
+[ssh2_conn, ~] = ssh2_command(ssh2_conn, ['zip -r ' ...
+  tmpdir_remote, '/download.zip ', ps.extDownloadFolder]);
+if ssh2_conn.command_status
+  error('Error creating zip file on server:\n%s', char(ssh2_conn.command_result));
+end
+ssh2_conn = scp_simple_get(ps.hostname, ps.username, ps.password, 'download.zip', ...
+  tbpath, tmpdir_remote);
 
 %% remove zip file from server
-[~,~]=ssh2_command(ssh2_conn, 'rm -rf download.zip');
+[ssh2_conn,~]=ssh2_command(ssh2_conn, ['rm ', tmpdir_remote, '/download.zip']);
 
 %% remove upload data and results from the server
-if(ps.deleteDataAfterDownload)
+if ps.deleteDataAfterDownload 
   [~,~]=ssh2_command(ssh2_conn, ['rm -rf ', ps.extUploadFolder, '/upload', ps.dateString]);
   [~,~]=ssh2_command(ssh2_conn, ['rm -f ', bs.name, '.e', num2str(ps.jobID)]);
   [~,~]=ssh2_command(ssh2_conn, ['rm -f ', bs.name, '.o', num2str(ps.jobID)]);
