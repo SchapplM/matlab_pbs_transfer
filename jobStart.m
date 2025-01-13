@@ -66,7 +66,7 @@ end
 ps = createJobFile(bs, ps);
 
 %% Initialize SSH session
-ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password);
+ssh2_conn = ssh2_config(ps.hostname, ps.username, ps.password, ps.port);
 
 %% upload personal data from upload folder by using sftp-protocol
 t0 = tic();

@@ -4,6 +4,7 @@ function [personalSettings, batchSettings] = userSettings()
 personalSettings.username = 'InsertYourUsername';
 personalSettings.password = 'InsertYourPassword';
 personalSettings.hostname = 'login.cluster.uni-hannover.de';
+personalSettings.port = 22;
 
 %% personal settings (basic, necessary)
 % Relative/Path/To/Your/Results/Directory/Inside/Your/Upload/Directory
