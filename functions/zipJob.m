@@ -60,10 +60,13 @@ for i = 1:length(s{1})
   line = strrep(line, '?NAME?', ['zip_log_', num2str(jobID)]);
   line = strrep(line, '?MAILADDRESS?', bs.mailName);
   line = strrep(line, '?MAILTYPE?', bs.mailType);
+  % If using SLURM, using all partitions is done by leaving out the line
+  % on a PBS cluster, the term "all" has to be entered by the user.
   if (strcmp(bs.scheduler, 'SLURM') && isempty(bs.queue)) && ...
       contains(line, '--partition=') % see createJobFile.m
     continue
   end
+  line = strrep(line, '?QUEUE?', bs.queue);
   % start after the first empty line. This marks the end of the scheduler
   % commands at the top of the script. Has to match the template files.
   if isempty(line), break; end
