@@ -85,7 +85,8 @@ while true
   try
     [ssh2_conn, cmdResponse] = ssh2_command(ssh2_conn, cmdline_qsub);
     if ssh2_conn.command_status
-      error('Start command for job failed:\n %s', char(ssh2_conn.command_result));
+      disp(ssh2_conn.command_result);
+      error('Start command for job failed');
     end
   catch err
     warning('startJob:SSH_error', 'Error running the job via ssh: %s', err.message);
