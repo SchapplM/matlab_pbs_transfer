@@ -4,7 +4,7 @@ This program enables you to perform large/computationally intensive jobs on a PB
 
 Philipp Kortmann, philipp.kortmann@imes.uni-hannover.de, 2018-04  
 Moritz Schappler, moritz.schappler@imes.uni-hannover.de, 2020-09  
-(C) Institut für Mechatronische Systeme, Leibniz Universität Hannover, Germany
+(C) Institut fÃ¼r Mechatronische Systeme, Leibniz UniversitÃ¤t Hannover, Germany
 
 ## DESCRIPTION:
 
@@ -27,4 +27,5 @@ Starting cluster jobs via `jobStart` can be included in other Matlab programs. T
 - You can also start several jobs in a row without waiting for a previous job to finish.
 - If a quick execution of your job is desired, the requested resources (especially the walltime) should be selected as low as possible.
 - The start of cluster jobs with `jobStart.m` can also be done out of another Matlab script e.g. in a loop (check the functionality of your computations first to avoid spamming the cluster server).
+- On first start-up, you need to connect to the cluster via ssh manually to add the server's key fingerprint to your ssh-manager cache. In the command line, use `plink -P 22 -ssh [YourUsername]@login.cluster.uni-hannover.de -pw [YourPassword]`
 
