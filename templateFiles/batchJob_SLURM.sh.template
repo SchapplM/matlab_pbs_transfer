@@ -12,7 +12,7 @@
 #SBATCH --no-requeue
 
 # load the relevant modules
-module load GCCcore/.8.3.0 FFmpeg/.4.2.1
+module load GCCcore/.13.2.0 FFmpeg/.6.0
 module load ?MATVERSION?
 
 # change to work dir:
