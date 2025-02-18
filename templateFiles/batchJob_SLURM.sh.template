@@ -24,9 +24,12 @@ LOGFILE=$(echo $SLURM_JOB_ID | cut -d"." -f1).log
 # use the Job id as environment variable (to use it inside the Matlab log)
 export JOBID=$SLURM_JOB_ID
 
-# change home directory to avoid file access problems on the Matlab profile directory when trying to open a parallel pool
-# do not use temporary directory to keep log files in case of crash
-TMPHOME=$BIGWORK/JOBHOMES/$JOBID
+# Change home directory to avoid file access problems on the Matlab 
+# profile directory when trying to open a parallel pool.
+# To keep log files in case of crash, use a permanent directory like 
+# $BIGWORK/JOBHOMES/$JOBID. Since Matlab R2024b, each job home is ca. 800MB.
+# Therefore, the Job Home is created on the /tmp directory and vanishes after job completion.
+TMPHOME=$TMPDIR/JOBHOME
 mkdir -p $TMPHOME
 
 # run Matlab in endless loop to be able to restart upon error
@@ -40,8 +43,9 @@ while true; do
   # show which computer the job ran on and print status information
   echo "Job runs on:" $(hostname) > $LOGFILE
   echo "Working directory:" $(pwd) >> $LOGFILE
-  echo "Start: `date`" >> $LOGFILE
-  echo "Run ?MATFILE? using Matlab" >> $LOGFILE
+  echo "Temporary home directory: $TMPHOME" >> $LOGFILE
+  echo "Start time: `date`" >> $LOGFILE
+  echo "Run ?MATFILE? using Matlab ?MATVERSION?" >> $LOGFILE
   (export HOME=$TMPHOME && matlab -nodesktop < ?MATFILE? >> $LOGFILE 2>&1)
   echo "Matlab script finished with code $?" >> $LOGFILE
   echo "End: `date`" >> $LOGFILE
